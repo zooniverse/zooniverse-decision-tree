@@ -1,0 +1,13 @@
+{
+  "name": "zooniverse-decision-tree",
+  "version": "0.0.1",
+  "devDependencies": {
+    "coffee-script": "~1.7.1",
+    "serveup": "~0.0.5"
+  },
+  "scripts": {
+    "watch-coffee": "coffee --compile --watch --output ./lib ./src",
+    "serve": "serveup --port 7233",
+    "start": "npm run-script watch-coffee & npm run-script serve"
+  }
+}

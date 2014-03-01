@@ -38,7 +38,7 @@ class Task
     @el.setAttribute 'data-task-type', @type
 
   renderTemplate: ->
-    @el.innerHTML = @template()
+    @el.insertAdjacentHTML 'beforeEnd', @template()
 
   handleEvent: (e) ->
     handler = switch e.type

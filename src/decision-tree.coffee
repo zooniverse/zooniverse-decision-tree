@@ -43,13 +43,17 @@ class Task
   handleEvent: (e) ->
     handler = switch e.type
       when 'submit' then @handleSubmit
+
     handler?.call this, e
 
   handleSubmit: (e) ->
     e.preventDefault()
 
-  reset: ->
-    @el.reset()
+  show: ->
+    @el.style.display = ''
+
+  hide: ->
+    @el.style.display = 'none'
 
   enter: ->
     @show()
@@ -63,13 +67,11 @@ class Task
     throw new Error "Define Task::getValue for #{@type}"
 
   getNext: ->
+    # The next task might change depending on the current one.
     @next
 
-  show: ->
-    @el.style.display = ''
-
-  hide: ->
-    @el.style.display = 'none'
+  reset: ->
+    @el.reset()
 
 class DecisionTree
   @tasks = {}
@@ -81,10 +83,10 @@ class DecisionTree
   CHANGE: 'decision-tree:change'
   CONFIRM: 'decision-tree:confirm'
   COMPLETE: 'decision-tree:complete'
+  RESET: 'decision-tree:reset'
 
   tasks: null
 
-  values: null
   currentTask: null
 
   constructor: (options = {}) ->
@@ -92,7 +94,6 @@ class DecisionTree
       @[key] = value
 
     @tasks ?= {}
-    @values ?= {}
 
     @createRoot()
 
@@ -125,18 +126,14 @@ class DecisionTree
     handler?.call this, e
 
   handleChange: (e) ->
-    @values[@currentTask.key] = @currentTask.getValue()
-
-    @dispatchEvent @CHANGE,
+    @_dispatchEvent @CHANGE,
       key: @currentTask.key
-      value: @values[@currentTask.key]
+      value: @currentTask.getValue()
 
   handleSubmit: (e) ->
-    @values[@currentTask.key] = @currentTask.getValue()
-
-    @dispatchEvent @CONFIRM,
+    @_dispatchEvent @CONFIRM,
       key: @currentTask.key
-      value: @values[@currentTask.key]
+      value: @currentTask.getValue()
 
     @loadTask @currentTask.getNext()
 
@@ -148,24 +145,26 @@ class DecisionTree
     else if typeof task is 'string'
       @loadTask @tasks[task]
     else if task?
-      task.reset()
-
-      delete @values[task.key]
-      @dispatchEvent @CHANGE,
-        key: task.key
-        value: @values[task.key]
-
       task.enter()
       @currentTask = task
-      @dispatchEvent @TASK, @currentTask
+      @_dispatchEvent @TASK, @currentTask
     else
-      @dispatchEvent @COMPLETE,
-        value: @getValue()
+      @_dispatchEvent @COMPLETE,
+        value: @getValues()
 
-  getValue: ->
-    @values
+  getValues: ->
+    values = {}
+    for taskKey, task of @tasks
+      values[task.key] = task.getValue() ? null
+    values
 
-  dispatchEvent: (eventName, detail) ->
+  reset: ->
+    for taskKey, task of @tasks
+      task.reset()
+
+    @_dispatchEvent @RESET
+
+  _dispatchEvent: (eventName, detail) ->
     console?.log this, eventName, detail if +location.port > 1023
     e = document.createEvent 'CustomEvent'
     e.initCustomEvent eventName, true, true, detail

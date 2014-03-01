@@ -31,9 +31,9 @@ class ButtonTask extends Task
     @chosenButton = e.target
 
   getValue: ->
-    choiceIndex = @chosenButton.getAttribute 'data-choice-index'
+    choiceIndex = @chosenButton?.getAttribute 'data-choice-index'
     choice = @choices[choiceIndex]
-    choice.value
+    choice?.value
 
 window.DecisionTree.ButtonTask = ButtonTask
 window.DecisionTree.registerTask ButtonTask

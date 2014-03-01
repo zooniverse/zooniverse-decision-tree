@@ -46,14 +46,13 @@ window.dt = new DecisionTree({
 document.body.appendChild(window.dt.el);
 
 setTimeout(function() {
-  var data = {};
   var output = document.getElementById('output');
 
   function update(e) {
-    data[e.detail.key] = e.detail.value;
-    output.value = JSON.stringify(data, null, 4);
+    output.value = JSON.stringify(window.dt.getValues(), null, 4);
   }
 
-  addEventListener(dt.CHANGE, update, false);
-  addEventListener(dt.CONFIRM, update, false);
+  update();
+  addEventListener(window.dt.CHANGE, update, false);
+  addEventListener(window.dt.CONFIRM, update, false);
 });

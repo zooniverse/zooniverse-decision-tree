@@ -157,11 +157,9 @@ class DecisionTree
       value: @valueChain[@valueChain.length - 1]
 
   handleSubmit: (e) ->
-    @valueChain[@valueChain.length - 1] = @currentTask.getValue()
+    @handleChange e
 
-    @_dispatchEvent @CONFIRM,
-      key: @currentTask.key
-      value: @valueChain[@valueChain.length - 1]
+    @_dispatchEvent @CONFIRM
 
     @loadTask @currentTask.getNext()
 
@@ -185,7 +183,6 @@ class DecisionTree
       @currentTask.enter()
       @backButton.disabled = @taskChain.length is 1
 
-      @_dispatchEvent @CHANGE
       @_dispatchEvent @TASK, @currentTask
 
     else
@@ -214,7 +211,7 @@ class DecisionTree
     @_dispatchEvent @RESET
 
   _dispatchEvent: (eventName, detail) ->
-    console?.log this, eventName, detail if +location.port > 1023
+    console?.log this, eventName, {detail} if +location.port > 1023
     e = document.createEvent 'CustomEvent'
     e.initCustomEvent eventName, true, true, detail
     @el.dispatchEvent e

@@ -55,5 +55,4 @@ setTimeout(function() {
 
   update();
   addEventListener(window.dt.CHANGE, update, false);
-  addEventListener(window.dt.CONFIRM, update, false);
 });

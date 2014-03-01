@@ -22,6 +22,12 @@ class RadioTask extends Task
     next = if choice? and 'next' of choice then choice.next else super
     next
 
+  reset: (value) ->
+    super
+    if value?
+      choiceIndex = i for choice, i in @choices when choice.value is value
+      @el.querySelector("[data-choice-index='#{choiceIndex}']").checked = true
+
 window.DecisionTree.RadioTask = RadioTask
 window.DecisionTree.registerTask RadioTask
 module?.exports = RadioTask

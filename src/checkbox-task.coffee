@@ -16,6 +16,14 @@ class CheckboxTask extends Task
       choice = @choices[choiceIndex]
       choice.value
 
+  reset: (values) ->
+    super
+    if values?
+      for value in values
+        choiceIndex = i for choice, i in @choices when choice.value is value
+        @el.querySelector("[data-choice-index='#{choiceIndex}']").checked = true
+
+
 window.DecisionTree.CheckboxTask = CheckboxTask
 window.DecisionTree.registerTask CheckboxTask
 module?.exports = CheckboxTask

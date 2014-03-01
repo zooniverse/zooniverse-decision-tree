@@ -84,11 +84,12 @@ class DecisionTree
     @tasks[taskClass::type] = taskClass
 
   tasks: null
+  firstTask: null
 
   backLabel: 'Back'
 
   LOAD_TASK: 'decision-tree:load-task'
-  CHANGE: 'decision-tree:change-task-value'
+  CHANGE: 'decision-tree:change-values'
   CONFIRM: 'decision-tree:confirm-task-value'
   COMPLETE: 'decision-tree:complete-tree'
   RESET: 'decision-tree:reset-tree'
@@ -108,6 +109,8 @@ class DecisionTree
     @createBackButton()
     @addTasks()
 
+    @reset()
+
   createRoot: ->
     @el = document.createElement 'div'
     @el.className = 'decision-tree'
@@ -118,7 +121,7 @@ class DecisionTree
     @backButton = document.createElement 'button'
     @backButton.type = 'button'
     @backButton.name = 'decision-tree-go-back'
-    @backButton.textContent = @backLabel
+    @backButton.innerHTML = @backLabel
     @backButton.addEventListener 'click', this, false
     @el.appendChild @backButton
 
@@ -150,18 +153,12 @@ class DecisionTree
     handler?.call this, e
 
   handleChange: (e) ->
-    @valueChain[@valueChain.length - 1] = @currentTask.getValue()
-
-    @_dispatchEvent @CHANGE,
-      key: @currentTask.key
-      value: @valueChain[@valueChain.length - 1]
+    @syncCurrentValue()
 
   handleSubmit: (e) ->
-    @handleChange e
-
+    @syncCurrentValue()
     @_dispatchEvent @CONFIRM
-
-    @loadTask @currentTask.getNext()
+    @loadTask @currentTask?.getNext()
 
   loadTask: (task, value) ->
     @currentTask?.exit()
@@ -195,18 +192,26 @@ class DecisionTree
       @valueChain.pop()
       @loadTask @taskChain.pop(), @valueChain.pop()
 
+  syncCurrentValue: ->
+    @valueChain[@valueChain.length - 1] = @currentTask?.getValue()
+
+    @_dispatchEvent @CHANGE,
+      key: @currentTask?.key
+      value: @valueChain[@valueChain.length - 1]
+
   getValues: ->
     for key, i in @taskChain
       result = {}
       result[key] = @valueChain[i] ? null
       result
 
-  reset: (taskToLoad) ->
+  reset: (taskToLoad = @firstTask) ->
     for taskKey, task of @tasks
       task.reset()
 
     @taskChain.splice 0
     @valueChain.splice 0
+    @syncCurrentValue()
 
     @_dispatchEvent @RESET
 
@@ -214,7 +219,9 @@ class DecisionTree
       @loadTask taskToLoad
 
   _dispatchEvent: (eventName, detail) ->
-    console?.log this, eventName, {detail} if +location.port > 1023
+    if +location.port > 1023
+      console?.log this, eventName, {detail}
+
     e = document.createEvent 'CustomEvent'
     e.initCustomEvent eventName, true, true, detail
     @el.dispatchEvent e

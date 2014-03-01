@@ -3,7 +3,13 @@ RadioTask = DecisionTree.RadioTask;
 CheckboxTask = DecisionTree.CheckboxTask;
 ButtonTask = DecisionTree.ButtonTask;
 
+var demoContainer = document.getElementById('demo-container');
+var output = document.getElementById('output');
+var startOverButton = document.querySelector('button[name="start-over"]');
+
 window.dt = new DecisionTree({
+  name: 'decisions',
+  firstTask: 'pickOne',
   tasks: {
     pickOne: new RadioTask({
       question: 'Pick a radio button',
@@ -44,17 +50,17 @@ window.dt = new DecisionTree({
   }
 });
 
-document.body.appendChild(window.dt.el);
+demoContainer.appendChild(window.dt.el);
 
-setTimeout(function() {
-  var output = document.getElementById('output');
+function startOver() {
+  window.dt.reset();
+}
 
-  function update(e) {
-    output.value = JSON.stringify(window.dt.getValues(), null, 4);
-  }
+function updateOutput() {
+  output.value = JSON.stringify(window.dt.getValues(), null, 4);
+}
 
-  update();
-  addEventListener(window.dt.CHANGE, update, false);
+addEventListener(window.dt.CHANGE, updateOutput, false);
+updateOutput();
 
-  window.dt.reset('pickOne');
-});
+startOverButton.addEventListener('click', startOver, false);

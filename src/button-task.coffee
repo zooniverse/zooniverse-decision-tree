@@ -35,6 +35,11 @@ class ButtonTask extends Task
     choice = @choices[choiceIndex]
     choice?.value
 
+  getNext: ->
+    choiceIndex = @chosenButton?.getAttribute 'data-choice-index'
+    choice = @choices[choiceIndex]
+    if 'next' of choice then choice.next else @next
+
 window.DecisionTree.ButtonTask = ButtonTask
 window.DecisionTree.registerTask ButtonTask
 module?.exports = ButtonTask

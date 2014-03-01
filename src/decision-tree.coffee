@@ -83,13 +83,15 @@ class DecisionTree
   @registerTask = (taskClass) ->
     @tasks[taskClass::type] = taskClass
 
+  tasks: null
+
+  backLabel: 'Back'
+
   TASK: 'decision-tree:task'
   CHANGE: 'decision-tree:change'
   CONFIRM: 'decision-tree:confirm'
   COMPLETE: 'decision-tree:complete'
   RESET: 'decision-tree:reset'
-
-  tasks: null
 
   currentTask: null
   taskChain: null
@@ -103,14 +105,22 @@ class DecisionTree
     @tasks ?= {}
 
     @createRoot()
+    @createBackButton()
     @addTasks()
-
-    @el.addEventListener 'change', this, false
-    @el.addEventListener 'submit', this, false
 
   createRoot: ->
     @el = document.createElement 'div'
     @el.className = 'decision-tree'
+    @el.addEventListener 'change', this, false
+    @el.addEventListener 'submit', this, false
+
+  createBackButton: ->
+    @backButton = document.createElement 'button'
+    @backButton.type = 'button'
+    @backButton.name = 'decision-tree-go-back'
+    @backButton.textContent = @backLabel
+    @backButton.addEventListener 'click', this, false
+    @el.appendChild @backButton
 
   addTasks: ->
     for taskKey, task of @tasks
@@ -128,9 +138,14 @@ class DecisionTree
       @el.appendChild task.el
 
   handleEvent: (e) ->
-    handler = switch e.type
-      when 'change' then @handleChange
-      when 'submit' then @handleSubmit
+    handler = switch e.target
+      when @backButton
+        switch e.type
+          when 'click' then @goBack
+      else
+        switch e.type
+          when 'change' then @handleChange
+          when 'submit' then @handleSubmit
 
     handler?.call this, e
 
@@ -139,14 +154,14 @@ class DecisionTree
 
     @_dispatchEvent @CHANGE,
       key: @currentTask.key
-      value: @currentTask.getValue()
+      value: @valueChain[@valueChain.length - 1]
 
   handleSubmit: (e) ->
     @valueChain[@valueChain.length - 1] = @currentTask.getValue()
 
     @_dispatchEvent @CONFIRM,
       key: @currentTask.key
-      value: @currentTask.getValue()
+      value: @valueChain[@valueChain.length - 1]
 
     @loadTask @currentTask.getNext()
 
@@ -168,8 +183,10 @@ class DecisionTree
       @valueChain.push @currentTask.getValue()
 
       @currentTask.enter()
-      @_dispatchEvent @TASK, @currentTask
+      @backButton.disabled = @taskChain.length is 1
+
       @_dispatchEvent @CHANGE
+      @_dispatchEvent @TASK, @currentTask
 
     else
       @_dispatchEvent @COMPLETE,

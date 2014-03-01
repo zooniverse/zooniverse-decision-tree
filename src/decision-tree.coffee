@@ -77,6 +77,7 @@ class DecisionTree
   @registerTask = (taskClass) ->
     @tasks[taskClass::type] = taskClass
 
+  TASK: 'decision-tree:task'
   CHANGE: 'decision-tree:change'
   CONFIRM: 'decision-tree:confirm'
   COMPLETE: 'decision-tree:complete'
@@ -156,6 +157,7 @@ class DecisionTree
 
       task.enter()
       @currentTask = task
+      @dispatchEvent @TASK, @currentTask
     else
       @dispatchEvent @COMPLETE,
         value: @getValue()

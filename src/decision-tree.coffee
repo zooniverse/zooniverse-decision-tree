@@ -29,7 +29,10 @@ class Task
   constructor: (options = {}) ->
     @[key] = value for key, value of options
     @choices ?= []
+
     @createRoot()
+    # Don't render until it's in a tree and knows its key.
+
     @hide()
 
   createRoot: ->
@@ -70,8 +73,9 @@ class Task
     # The next task might change depending on the current one.
     @next
 
-  reset: ->
+  reset: (value) ->
     @el.reset()
+    # Display values passed in.
 
 class DecisionTree
   @tasks = {}
@@ -88,15 +92,27 @@ class DecisionTree
   tasks: null
 
   currentTask: null
+  taskChain: null
+  valueChain: null
 
   constructor: (options = {}) ->
-    for key, value of options
-      @[key] = value
+    @taskChain = []
+    @valueChain = []
 
+    @[key] = value for key, value of options
     @tasks ?= {}
 
     @createRoot()
+    @addTasks()
 
+    @el.addEventListener 'change', this, false
+    @el.addEventListener 'submit', this, false
+
+  createRoot: ->
+    @el = document.createElement 'div'
+    @el.className = 'decision-tree'
+
+  addTasks: ->
     for taskKey, task of @tasks
       unless task instanceof Task
         if @constructor.tasks[task.type]?
@@ -111,56 +127,72 @@ class DecisionTree
       task.renderTemplate()
       @el.appendChild task.el
 
-
-    @el.addEventListener 'change', this, false
-    @el.addEventListener 'submit', this, false
-
-  createRoot: ->
-    @el = document.createElement 'div'
-    @el.className = 'decision-tree'
-
   handleEvent: (e) ->
     handler = switch e.type
       when 'change' then @handleChange
       when 'submit' then @handleSubmit
+
     handler?.call this, e
 
   handleChange: (e) ->
+    @valueChain[@valueChain.length - 1] = @currentTask.getValue()
+
     @_dispatchEvent @CHANGE,
       key: @currentTask.key
       value: @currentTask.getValue()
 
   handleSubmit: (e) ->
+    @valueChain[@valueChain.length - 1] = @currentTask.getValue()
+
     @_dispatchEvent @CONFIRM,
       key: @currentTask.key
       value: @currentTask.getValue()
 
     @loadTask @currentTask.getNext()
 
-  loadTask: (task) ->
+  loadTask: (task, value) ->
     @currentTask?.exit()
+    @currentTask = null
 
     if typeof task is 'function'
-      @loadTask task this
+      @loadTask task, value
+
     else if typeof task is 'string'
-      @loadTask @tasks[task]
+      @loadTask @tasks[task], value
+
     else if task?
-      task.enter()
       @currentTask = task
+      @currentTask.reset value
+
+      @taskChain.push @currentTask.key
+      @valueChain.push @currentTask.getValue()
+
+      @currentTask.enter()
       @_dispatchEvent @TASK, @currentTask
+      @_dispatchEvent @CHANGE
+
     else
       @_dispatchEvent @COMPLETE,
         value: @getValues()
 
+  goBack: ->
+    unless @taskChain.length is 1
+      @taskChain.pop()
+      @valueChain.pop()
+      @loadTask @taskChain.pop(), @valueChain.pop()
+
   getValues: ->
-    values = {}
-    for taskKey, task of @tasks
-      values[task.key] = task.getValue() ? null
-    values
+    for key, i in @taskChain
+      result = {}
+      result[key] = @valueChain[i] ? null
+      result
 
   reset: ->
     for taskKey, task of @tasks
       task.reset()
+
+    @taskChain.splice 0
+    @valueChain.splice 0
 
     @_dispatchEvent @RESET
 

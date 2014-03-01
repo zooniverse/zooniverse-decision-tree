@@ -33,11 +33,12 @@ window.dt = new DecisionTree({
     clickOne: new ButtonTask({
       question: 'Click one',
       choices: [{
-        value: 'a',
-        label: 'A'
+        value: 'again',
+        label: 'Again',
+        next: 'pickOne'
       }, {
-        value: 'b',
-        label: 'B'
+        value: 'end',
+        label: 'End'
       }]
     })
   }

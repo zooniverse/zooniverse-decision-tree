@@ -87,11 +87,11 @@ class DecisionTree
 
   backLabel: 'Back'
 
-  TASK: 'decision-tree:task'
-  CHANGE: 'decision-tree:change'
-  CONFIRM: 'decision-tree:confirm'
-  COMPLETE: 'decision-tree:complete'
-  RESET: 'decision-tree:reset'
+  LOAD_TASK: 'decision-tree:load-task'
+  CHANGE: 'decision-tree:change-task-value'
+  CONFIRM: 'decision-tree:confirm-task-value'
+  COMPLETE: 'decision-tree:complete-tree'
+  RESET: 'decision-tree:reset-tree'
 
   currentTask: null
   taskChain: null
@@ -183,7 +183,7 @@ class DecisionTree
       @currentTask.enter()
       @backButton.disabled = @taskChain.length is 1
 
-      @_dispatchEvent @TASK, @currentTask
+      @_dispatchEvent @LOAD_TASK, @currentTask
 
     else
       @_dispatchEvent @COMPLETE,
@@ -201,7 +201,7 @@ class DecisionTree
       result[key] = @valueChain[i] ? null
       result
 
-  reset: ->
+  reset: (taskToLoad) ->
     for taskKey, task of @tasks
       task.reset()
 
@@ -209,6 +209,9 @@ class DecisionTree
     @valueChain.splice 0
 
     @_dispatchEvent @RESET
+
+    if taskToLoad?
+      @loadTask taskToLoad
 
   _dispatchEvent: (eventName, detail) ->
     console?.log this, eventName, {detail} if +location.port > 1023

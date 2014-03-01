@@ -55,4 +55,6 @@ setTimeout(function() {
 
   update();
   addEventListener(window.dt.CHANGE, update, false);
+
+  window.dt.reset('pickOne');
 });

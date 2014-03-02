@@ -83,6 +83,7 @@ class DecisionTree
   @registerTask = (taskClass) ->
     @tasks[taskClass::type] = taskClass
 
+  name: ''
   tasks: null
   firstTask: null
 
@@ -106,6 +107,7 @@ class DecisionTree
     @tasks ?= {}
 
     @createRoot()
+    @createInput() if @name
     @createBackButton()
     @addTasks()
 
@@ -116,6 +118,12 @@ class DecisionTree
     @el.className = 'decision-tree'
     @el.addEventListener 'change', this, false
     @el.addEventListener 'submit', this, false
+
+  createInput: ->
+    @input = document.createElement 'input'
+    # @input.type = 'hidden'
+    @input.name = @name if @name
+    @el.appendChild @input
 
   createBackButton: ->
     @backButton = document.createElement 'button'
@@ -182,6 +190,8 @@ class DecisionTree
 
       @_dispatchEvent @LOAD_TASK, @currentTask
 
+      @syncCurrentValue()
+
     else
       @_dispatchEvent @COMPLETE,
         value: @getValues()
@@ -194,6 +204,7 @@ class DecisionTree
 
   syncCurrentValue: ->
     @valueChain[@valueChain.length - 1] = @currentTask?.getValue()
+    @input?.value = JSON.stringify @getValues()
 
     @_dispatchEvent @CHANGE,
       key: @currentTask?.key
@@ -211,16 +222,17 @@ class DecisionTree
 
     @taskChain.splice 0
     @valueChain.splice 0
-    @syncCurrentValue()
 
     @_dispatchEvent @RESET
 
     if taskToLoad?
       @loadTask taskToLoad
+    else
+      @syncCurrentValue()
 
   _dispatchEvent: (eventName, detail) ->
     if +location.port > 1023
-      console?.log this, eventName, {detail}
+      console?.log "<#{@name || 'Unnamed decision tree'}>", eventName, {detail}
 
     e = document.createEvent 'CustomEvent'
     e.initCustomEvent eventName, true, true, detail

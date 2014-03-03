@@ -1,4 +1,10 @@
-class Task
+class Base
+  _dispatchEvent: (eventName, detail) ->
+    e = document.createEvent 'CustomEvent'
+    e.initCustomEvent eventName, true, true, detail
+    @el.dispatchEvent e
+
+class Task extends Base
   type: 'base-task'
 
   key: ''
@@ -6,7 +12,10 @@ class Task
   choices: null
   next: null
 
-  confirmLabel: 'OK'
+  confirmButtonLabel: 'OK'
+  confirmButtonName: 'decision-tree-confirm-task'
+
+  CONFIRM: 'decision-tree:task-confirm'
 
   template: -> "
     <div class='decision-tree-question'>#{@question}</div>
@@ -18,11 +27,11 @@ class Task
     </div>
 
     <div class='decision-tree-confirmation'>
-      <button type='submit' name='decision-tree-confirm'>#{@confirmLabel}</button>
+      <button type='button' name='#{@confirmButtonName}'>#{@confirmButtonLabel}</button>
     </div>
   "
 
-  choiceTemplate: (choice, i) -> "
+  choiceTemplate: (choice, i) -> "\
     <div>#{i}: #{choice.label} (#{choice.value})</div>
   "
 
@@ -31,26 +40,33 @@ class Task
     @choices ?= []
 
     @createRoot()
-    # Don't render until it's in a tree and knows its key.
 
     @hide()
 
   createRoot: ->
-    @el = document.createElement 'form'
+    @el = document.createElement 'div'
     @el.className = 'decision-tree-task'
     @el.setAttribute 'data-task-type', @type
 
   renderTemplate: ->
-    @el.insertAdjacentHTML 'beforeEnd', @template()
+    @el.innerHTML = @template()
+    @setUpConfirmButton()
+
+  setUpConfirmButton: ->
+    @confirmButton = @el.querySelector "button[name='#{@confirmButtonName}']"
+    @confirmButton.addEventListener 'click', this
 
   handleEvent: (e) ->
-    handler = switch e.type
-      when 'submit' then @handleSubmit
+    if e.type is 'click' and e.currentTarget is @confirmButton
+      @confirm()
 
-    handler?.call this, e
+  enter: ->
+    @show()
+    @el.addEventListener 'click', this, false
 
-  handleSubmit: (e) ->
-    e.preventDefault()
+  exit: ->
+    @el.removeEventListener 'click', this, false
+    @hide()
 
   show: ->
     @el.style.display = ''
@@ -58,13 +74,8 @@ class Task
   hide: ->
     @el.style.display = 'none'
 
-  enter: ->
-    @show()
-    @el.addEventListener 'submit', this, false
-
-  exit: ->
-    @el.removeEventListener 'submit', this, false
-    @hide()
+  confirm: ->
+    @_dispatchEvent @CONFIRM, @getValue()
 
   getValue: ->
     throw new Error "Define Task::getValue for #{@type}"
@@ -74,10 +85,9 @@ class Task
     @next
 
   reset: (value) ->
-    @el.reset()
-    # Display values passed in.
+    throw new Error "Define Task::reset for #{@type}"
 
-class DecisionTree
+class DecisionTree extends Base
   @tasks = {}
 
   @registerTask = (taskClass) ->
@@ -91,7 +101,6 @@ class DecisionTree
 
   LOAD_TASK: 'decision-tree:load-task'
   CHANGE: 'decision-tree:change-values'
-  CONFIRM: 'decision-tree:confirm-task-value'
   COMPLETE: 'decision-tree:complete-tree'
   RESET: 'decision-tree:reset-tree'
 
@@ -117,7 +126,7 @@ class DecisionTree
     @el = document.createElement 'div'
     @el.className = 'decision-tree'
     @el.addEventListener 'change', this, false
-    @el.addEventListener 'submit', this, false
+    @el.addEventListener Task::CONFIRM, this, false
 
   createInput: ->
     @input = document.createElement 'input'
@@ -149,23 +158,21 @@ class DecisionTree
       @el.appendChild task.el
 
   handleEvent: (e) ->
-    handler = switch e.target
-      when @backButton
-        switch e.type
-          when 'click' then @goBack
-      else
-        switch e.type
-          when 'change' then @handleChange
-          when 'submit' then @handleSubmit
+    if e.type is 'click' and e.currentTarget is @backButton
+      @goBack()
+    else
+      handler = switch e.type
+        when 'change' then @handleChange
+        when Task::CONFIRM then @handleTaskConfirm
 
-    handler?.call this, e
+      handler?.call this, e
 
   handleChange: (e) ->
-    @syncCurrentValue()
+    @syncCurrentValue @currentTask.getValue()
 
-  handleSubmit: (e) ->
-    @syncCurrentValue()
-    @_dispatchEvent @CONFIRM
+  handleTaskConfirm: (e) ->
+    console.log 'CONFIRM'
+    @syncCurrentValue e.detail
     @loadTask @currentTask?.getNext()
 
   loadTask: (task, value) ->
@@ -190,7 +197,7 @@ class DecisionTree
 
       @_dispatchEvent @LOAD_TASK, @currentTask
 
-      @syncCurrentValue()
+      @syncCurrentValue @valueChain[@valueChain.length - 1]
 
     else
       @_dispatchEvent @COMPLETE,
@@ -202,8 +209,8 @@ class DecisionTree
       @valueChain.pop()
       @loadTask @taskChain.pop(), @valueChain.pop()
 
-  syncCurrentValue: ->
-    @valueChain[@valueChain.length - 1] = @currentTask?.getValue()
+  syncCurrentValue: (value) ->
+    @valueChain[@valueChain.length - 1] = value
     @input?.value = JSON.stringify @getValues()
 
     @_dispatchEvent @CHANGE,
@@ -229,14 +236,6 @@ class DecisionTree
       @loadTask taskToLoad
     else
       @syncCurrentValue()
-
-  _dispatchEvent: (eventName, detail) ->
-    if +location.port > 1023
-      console?.log "<#{@name || 'Unnamed decision tree'}>", eventName, {detail}
-
-    e = document.createEvent 'CustomEvent'
-    e.initCustomEvent eventName, true, true, detail
-    @el.dispatchEvent e
 
 DecisionTree.Task = Task
 window.DecisionTree = DecisionTree

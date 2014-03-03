@@ -23,7 +23,8 @@ class RadioTask extends Task
     next
 
   reset: (value) ->
-    super
+    @el.querySelector('input:checked')?.checked = false
+
     if value?
       choiceIndex = i for choice, i in @choices when choice.value is value
       @el.querySelector("[data-choice-index='#{choiceIndex}']").checked = true

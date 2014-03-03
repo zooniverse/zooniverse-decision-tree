@@ -6,7 +6,7 @@ class ButtonTask extends Task
   chosenButton: null
 
   choiceTemplate: (choice, i) -> "
-    <button type='submit' name='#{@key}' value='#{choice.value}' data-choice-index='#{i}'>#{choice.label}</button>
+    <button type='button' name='#{@key}' value='#{choice.value}' data-choice-index='#{i}'>#{choice.label}</button>
   "
 
   renderTemplate: ->
@@ -21,14 +21,16 @@ class ButtonTask extends Task
     super
     @el.removeEventListener 'click', this, false
 
-  handleEvent: (e) ->
-    if e.type is 'click'
-      @handleClick e
-    else
-      super
+  reset: (value) ->
+    if value?
+      choiceIndex = i for choice, i in @choices when choice.value is value
+      @el.querySelector("[data-choice-index='#{choiceIndex}']")?.focus()
 
-  handleClick: (e) ->
-    @chosenButton = e.target
+  handleEvent: (e) ->
+    super
+    if e.type is 'click' and e.target.name is @key
+      @chosenButton = e.target
+      @confirm()
 
   getValue: ->
     choiceIndex = @chosenButton?.getAttribute 'data-choice-index'

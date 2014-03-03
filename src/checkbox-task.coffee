@@ -17,12 +17,13 @@ class CheckboxTask extends Task
       choice.value
 
   reset: (values) ->
-    super
+    for input in @el.querySelectorAll('input:checked')
+      input.checked = false
+
     if values?
       for value in values
         choiceIndex = i for choice, i in @choices when choice.value is value
         @el.querySelector("[data-choice-index='#{choiceIndex}']").checked = true
-
 
 window.DecisionTree.CheckboxTask = CheckboxTask
 window.DecisionTree.registerTask CheckboxTask

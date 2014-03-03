@@ -1,6 +1,7 @@
 {
   "name": "zooniverse-decision-tree",
   "version": "0.0.1",
+  "main": "./lib/decision-tree.js",
   "devDependencies": {
     "coffee-script": "~1.7.1",
     "serveup": "~0.0.5"

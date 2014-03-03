@@ -200,14 +200,17 @@ class DecisionTree extends Base
       @syncCurrentValue @valueChain[@valueChain.length - 1]
 
     else
-      @_dispatchEvent @COMPLETE,
-        value: @getValues()
+      @complete()
 
   goBack: ->
     unless @taskChain.length is 1
       @taskChain.pop()
       @valueChain.pop()
       @loadTask @taskChain.pop(), @valueChain.pop()
+
+  complete: ->
+    @_dispatchEvent @COMPLETE,
+      value: @getValues()
 
   syncCurrentValue: (value) ->
     @valueChain[@valueChain.length - 1] = value

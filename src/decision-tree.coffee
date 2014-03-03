@@ -1,5 +1,5 @@
 class Base
-  _dispatchEvent: (eventName, detail) ->
+  dispatchEvent: (eventName, detail) ->
     e = document.createEvent 'CustomEvent'
     e.initCustomEvent eventName, true, true, detail
     @el.dispatchEvent e
@@ -75,7 +75,7 @@ class Task extends Base
     @el.style.display = 'none'
 
   confirm: ->
-    @_dispatchEvent @CONFIRM, @getValue()
+    @dispatchEvent @CONFIRM, @getValue()
 
   getValue: ->
     throw new Error "Define Task::getValue for #{@type}"
@@ -171,7 +171,6 @@ class DecisionTree extends Base
     @syncCurrentValue @currentTask.getValue()
 
   handleTaskConfirm: (e) ->
-    console.log 'CONFIRM'
     @syncCurrentValue e.detail
     @loadTask @currentTask?.getNext()
 
@@ -193,14 +192,18 @@ class DecisionTree extends Base
       @valueChain.push @currentTask.getValue()
 
       @currentTask.enter()
+
       @backButton.disabled = @taskChain.length is 1
 
-      @_dispatchEvent @LOAD_TASK, @currentTask
+      @dispatchEvent @LOAD_TASK,
+        task: @currentTask
+        index: @taskChain.length - 1
 
       @syncCurrentValue @valueChain[@valueChain.length - 1]
 
     else
       @complete()
+
 
   goBack: ->
     unless @taskChain.length is 1
@@ -209,14 +212,14 @@ class DecisionTree extends Base
       @loadTask @taskChain.pop(), @valueChain.pop()
 
   complete: ->
-    @_dispatchEvent @COMPLETE,
+    @dispatchEvent @COMPLETE,
       value: @getValues()
 
   syncCurrentValue: (value) ->
     @valueChain[@valueChain.length - 1] = value
     @input?.value = JSON.stringify @getValues()
 
-    @_dispatchEvent @CHANGE,
+    @dispatchEvent @CHANGE,
       key: @currentTask?.key
       value: @valueChain[@valueChain.length - 1]
 
@@ -233,7 +236,7 @@ class DecisionTree extends Base
     @taskChain.splice 0
     @valueChain.splice 0
 
-    @_dispatchEvent @RESET
+    @dispatchEvent @RESET
 
     if taskToLoad?
       @loadTask taskToLoad

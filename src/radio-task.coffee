@@ -1,7 +1,7 @@
-{Task} = window.DecisionTree ? require './decision-tree'
+DecisionTree = window.DecisionTree ? require './decision-tree'
 
-class RadioTask extends Task
-  type: 'radio'
+class RadioTask extends DecisionTree.Task
+  @type: 'radio'
 
   choiceTemplate: (choice, i) -> "
     <label>
@@ -29,6 +29,7 @@ class RadioTask extends Task
       choiceIndex = i for choice, i in @choices when choice.value is value
       @el.querySelector("[data-choice-index='#{choiceIndex}']").checked = true
 
-window.DecisionTree.RadioTask = RadioTask
-window.DecisionTree.registerTask RadioTask
+DecisionTree.registerTask RadioTask
+
+DecisionTree.RadioTask = RadioTask
 module?.exports = RadioTask

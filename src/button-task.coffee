@@ -1,7 +1,7 @@
-{Task} = window.DecisionTree ? require './decision-tree'
+DecisionTree = window.DecisionTree ? require './decision-tree'
 
-class ButtonTask extends Task
-  type: 'button'
+class ButtonTask extends DecisionTree.Task
+  @type: 'button'
 
   chosenButton: null
 
@@ -42,6 +42,7 @@ class ButtonTask extends Task
     choice = @choices[choiceIndex]
     if 'next' of choice then choice.next else @next
 
-window.DecisionTree.ButtonTask = ButtonTask
-window.DecisionTree.registerTask ButtonTask
+DecisionTree.registerTask ButtonTask
+
+DecisionTree.ButtonTask = ButtonTask
 module?.exports = ButtonTask

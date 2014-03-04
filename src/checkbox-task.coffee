@@ -1,7 +1,7 @@
-{Task} = window.DecisionTree ? require './decision-tree'
+DecisionTree = window.DecisionTree ? require './decision-tree'
 
-class CheckboxTask extends Task
-  type: 'checkbox'
+class CheckboxTask extends DecisionTree.Task
+  @type: 'checkbox'
 
   choiceTemplate: (choice, i) -> "
     <label>
@@ -25,6 +25,7 @@ class CheckboxTask extends Task
         choiceIndex = i for choice, i in @choices when choice.value is value
         @el.querySelector("[data-choice-index='#{choiceIndex}']").checked = true
 
-window.DecisionTree.CheckboxTask = CheckboxTask
-window.DecisionTree.registerTask CheckboxTask
+DecisionTree.registerTask CheckboxTask
+
+DecisionTree.CheckboxTask = CheckboxTask
 module?.exports = CheckboxTask

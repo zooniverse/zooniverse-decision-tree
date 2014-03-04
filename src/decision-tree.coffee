@@ -5,7 +5,7 @@ class Base
     @el.dispatchEvent e
 
 class Task extends Base
-  type: 'base-task'
+  @type: 'base'
 
   key: ''
   question: ''
@@ -46,7 +46,7 @@ class Task extends Base
   createRoot: ->
     @el = document.createElement 'div'
     @el.className = 'decision-tree-task'
-    @el.setAttribute 'data-task-type', @type
+    @el.setAttribute 'data-task-type', @constructor.type
 
   renderTemplate: ->
     @el.innerHTML = @template()
@@ -78,20 +78,20 @@ class Task extends Base
     @dispatchEvent @CONFIRM, @getValue()
 
   getValue: ->
-    throw new Error "Define Task::getValue for #{@type}"
+    throw new Error "Define Task::getValue for #{@constructor.type}"
 
   getNext: ->
     # The next task might change depending on the current one.
     @next
 
   reset: (value) ->
-    throw new Error "Define Task::reset for #{@type}"
+    throw new Error "Define Task::reset for #{@constructor.type}"
 
 class DecisionTree extends Base
-  @tasks = {}
-
-  @registerTask = (taskClass) ->
-    @tasks[taskClass::type] = taskClass
+  @taskTypes = {}
+  @registerTask = ([type]..., taskClass) ->
+    type ?= taskClass.type
+    @taskTypes[type] = taskClass
 
   name: ''
   tasks: null
@@ -108,12 +108,22 @@ class DecisionTree extends Base
   taskChain: null
   valueChain: null
 
+  # Tasks can be registered to an instance.
+  registerTask: @registerTask
+
   constructor: (options = {}) ->
+    @taskTypes = Object.create @constructor.taskTypes
     @taskChain = []
     @valueChain = []
 
-    @[key] = value for key, value of options
-    @tasks ?= {}
+    for key, value of options
+      if key is 'tasks'
+        @tasks = Object.create value
+      else if key is 'taskTypes'
+        for type, task of value
+          @registerTask type, task
+      else
+        @[key] = value
 
     @createRoot()
     @createInput() if @name
@@ -145,8 +155,8 @@ class DecisionTree extends Base
   addTasks: ->
     for taskKey, task of @tasks
       unless task instanceof Task
-        if @constructor.tasks[task.type]?
-          task = new @constructor.tasks[task.type] task
+        if @taskTypes[task.type]?
+          task = new @taskTypes[task.type] task
           @tasks[taskKey] = task
         else
           throw new Error "No registered task #{task.type}"
@@ -203,7 +213,6 @@ class DecisionTree extends Base
 
     else
       @complete()
-
 
   goBack: ->
     unless @taskChain.length is 1
